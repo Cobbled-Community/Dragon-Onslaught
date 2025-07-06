@@ -98,7 +98,7 @@ public class DragonOnslaughtMap {
 		Vec3d pos = region.getBounds().centerBottom();
 		float facing = region.getData().getFloat(FACING_KEY, 0);
 
-		player.teleport(player.getServerWorld(), pos.getX(), pos.getY(), pos.getZ(), Set.of(), facing, 0, true);
+		player.teleport(player.getWorld(), pos.getX(), pos.getY(), pos.getZ(), Set.of(), facing, 0, true);
 	}
 
 	public Vec3d getDragonSpawnPos(ServerWorld world) {
