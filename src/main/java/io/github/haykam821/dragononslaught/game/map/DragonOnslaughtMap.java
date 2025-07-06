@@ -32,7 +32,7 @@ public class DragonOnslaughtMap {
 
 	private static final Comparator<TemplateRegion> PRIORITY_COMPARATOR = Comparator.comparingInt(region -> {
 		NbtCompound data = region.getData();
-		return data == null ? 0 : data.getInt(PRIORITY_KEY);
+		return data == null ? 0 : data.getInt(PRIORITY_KEY, 0);
 	});
 
 	private final MapTemplate template;
@@ -81,7 +81,7 @@ public class DragonOnslaughtMap {
 
 	private JoinAcceptorResult.Teleport acceptJoins(JoinAcceptor acceptor, ServerWorld world, TemplateRegion region) {
 		Vec3d pos = region.getBounds().centerBottom();
-		float facing = region.getData().getFloat(FACING_KEY);
+		float facing = region.getData().getFloat(FACING_KEY, 0);
 
 		return acceptor.teleport(world, pos, facing, 0);
 	}
@@ -96,7 +96,7 @@ public class DragonOnslaughtMap {
 
 	public void teleportToRegion(ServerPlayerEntity player, TemplateRegion region) {
 		Vec3d pos = region.getBounds().centerBottom();
-		float facing = region.getData().getFloat(FACING_KEY);
+		float facing = region.getData().getFloat(FACING_KEY, 0);
 
 		player.teleport(player.getServerWorld(), pos.getX(), pos.getY(), pos.getZ(), Set.of(), facing, 0, true);
 	}

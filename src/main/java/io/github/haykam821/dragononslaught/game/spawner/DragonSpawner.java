@@ -18,7 +18,7 @@ import net.minecraft.entity.boss.dragon.phase.PhaseManager;
 import net.minecraft.entity.boss.dragon.phase.PhaseType;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.TypeFilter;
-import net.minecraft.util.collection.DataPool;
+import net.minecraft.util.collection.Pool;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 
@@ -66,16 +66,16 @@ public class DragonSpawner {
 				float pitch = (float) (-MathHelper.atan2(dy, Math.sqrt(dx * dx + dz * dz)) * MathHelper.DEGREES_PER_RADIAN);
 
 				dragon.setYaw(yaw);
-				dragon.prevYaw = yaw;
+				dragon.lastYaw = yaw;
 
 				dragon.setHeadYaw(yaw);
-				dragon.prevHeadYaw = yaw;
+				dragon.lastHeadYaw = yaw;
 
 				dragon.setBodyYaw(yaw);
-				dragon.prevBodyYaw = yaw;
+				dragon.lastBodyYaw = yaw;
 
 				dragon.setPitch(pitch);
-				dragon.prevPitch = pitch;
+				dragon.lastPitch = pitch;
 
 				world.spawnEntity(dragon);
 				this.dragons.add(dragon);
@@ -102,7 +102,7 @@ public class DragonSpawner {
 	}
 
 	public Vec3d getTargetPos() {
-		DataPool.Builder<DragonTarget> builder = DataPool.builder();
+		Pool.Builder<DragonTarget> builder = Pool.builder();
 
 		for (PlayerEntry player : this.phase.getPlayers()) {
 			DragonTarget.addTo(builder, player.getDragonTarget());
@@ -113,7 +113,7 @@ public class DragonSpawner {
 		}
 
 		return builder.build()
-			.getDataOrEmpty(this.phase.getRandom())
+			.getOrEmpty(this.phase.getRandom())
 			.map(DragonTarget::getPos)
 			.orElse(null);
 	}

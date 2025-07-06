@@ -1,6 +1,6 @@
 package io.github.haykam821.dragononslaught.game.spawner.target;
 
-import net.minecraft.util.collection.DataPool;
+import net.minecraft.util.collection.Pool;
 import net.minecraft.util.math.Vec3d;
 
 public interface DragonTarget {
@@ -8,7 +8,7 @@ public interface DragonTarget {
 
 	public int getWeight();
 
-	public static void addTo(DataPool.Builder<DragonTarget> builder, DragonTarget target) {
+	public static void addTo(Pool.Builder<DragonTarget> builder, DragonTarget target) {
 		if (target != null) {
 			builder.add(target, target.getWeight());
 		}
