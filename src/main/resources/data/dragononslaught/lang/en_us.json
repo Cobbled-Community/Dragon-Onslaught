@@ -1,0 +1,14 @@
+{
+	"entity.dragononslaught.sparkler": "Sparkler",
+	"game.dragononslaught.divided_dragon_onslaught": "Dragon Onslaught: Divided",
+	"game.dragononslaught.divided_dragon_onslaught_2_teams": "Dragon Onslaught: Divided: 2 Teams",
+	"game.dragononslaught.divided_dragon_onslaught_4_teams": "Dragon Onslaught: Divided: 4 Teams",
+	"gameType.dragononslaught.dragon_onslaught": "Dragon Onslaught",
+	"item.dragononslaught.leap_feather": "Leap Feather",
+	"item.dragononslaught.sparkler": "Sparkler",
+	"text.dragononslaught.eliminated": "%s has been eliminated!",
+	"text.dragononslaught.no_winners": "Nobody won the game!",
+	"text.dragononslaught.template_load_failed": "Failed to load the map template",
+	"text.dragononslaught.win": "%s has won the game!",
+	"text.dragononslaught.win.team": "The %s team has won the game!"
+}

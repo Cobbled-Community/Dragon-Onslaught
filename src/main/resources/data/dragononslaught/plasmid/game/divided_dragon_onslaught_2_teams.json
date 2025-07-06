@@ -1,0 +1,22 @@
+{
+	"type": "dragononslaught:dragon_onslaught",
+	"map": {
+		"id": "dragononslaught:divided",
+		"sea_level": 62
+	},
+	"players": {
+		"min": 1,
+		"max": 32,
+		"threshold": 2
+	},
+	"teams": [
+		{
+			"key": "red",
+			"color": "red"
+		},
+		{
+			"key": "blue",
+			"color": "blue"
+		}
+	]
+}
