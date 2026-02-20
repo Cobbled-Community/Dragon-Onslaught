@@ -38,10 +38,10 @@ public class SparklerEntity extends ItemEntity implements PolymerEntity {
 	public void tick() {
 		super.tick();
 
-		if (this.getWorld() instanceof ServerWorld world) {
+		if (this.getEntityWorld() instanceof ServerWorld world) {
 			if (this.age % EFFECT_INTERVAL == 0) {
 				FireworksComponent fireworks = this.getStack().get(DataComponentTypes.FIREWORKS);
-				spawnFireworks(world, this.getPos(), fireworks);
+				spawnFireworks(world, this.getEntityPos(), fireworks);
 
 				this.playSound(SoundEvents.ENTITY_FIREWORK_ROCKET_LAUNCH, 3, 1);
 			}

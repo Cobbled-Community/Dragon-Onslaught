@@ -18,7 +18,7 @@ public record PlayerDragonTarget(ServerPlayerEntity player, DragonOnslaughtConfi
 	@Override
 	public Vec3d getPos() {
 		Vec3d pos = getRandomPosInside(player.getBoundingBox().expand(RANGE), player.getRandom());
-		int y = player.getWorld().getTopY(Heightmap.Type.WORLD_SURFACE, (int) pos.getX(), (int) pos.getZ());
+		int y = player.getEntityWorld().getTopY(Heightmap.Type.WORLD_SURFACE, (int) pos.getX(), (int) pos.getZ());
 
 		Optional<Integer> seaLevel = config.map().seaLevel();
 

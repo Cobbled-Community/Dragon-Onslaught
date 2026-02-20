@@ -7,6 +7,9 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.network.packet.Packet;
 import net.minecraft.network.packet.s2c.play.EntityVelocityUpdateS2CPacket;
+import net.minecraft.network.packet.s2c.play.PlaySoundFromEntityS2CPacket;
+import net.minecraft.network.packet.s2c.play.PlaySoundS2CPacket;
+import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
@@ -31,9 +34,7 @@ public class LeapFeatherItem extends Item implements PolymerItem {
 
 			Packet<?> packet = new EntityVelocityUpdateS2CPacket(player.getId(), velocity);
 			serverPlayer.networkHandler.sendPacket(packet);
-
-			player.playSoundToPlayer(SoundEvents.ENTITY_ENDER_DRAGON_SHOOT, SoundCategory.PLAYERS, 1, 1.2f);
-
+			serverPlayer.networkHandler.sendPacket(new PlaySoundFromEntityS2CPacket(RegistryEntry.of(SoundEvents.ENTITY_ENDER_DRAGON_SHOOT), SoundCategory.PLAYERS, serverPlayer, 1, 1.2f, world.getRandom().nextLong()));
 			return ActionResult.SUCCESS;
 		}
 

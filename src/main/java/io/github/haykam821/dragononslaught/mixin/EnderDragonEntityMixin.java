@@ -55,7 +55,7 @@ public abstract class EnderDragonEntityMixin extends Entity {
 
 	@Inject(method = "damageLivingEntities", at = @At("HEAD"), cancellable = true)
 	private void preventCollisionDamage(CallbackInfo ci) {
-		GameSpace gameSpace = GameSpaceManager.get().byWorld(this.getWorld());
+		GameSpace gameSpace = GameSpaceManager.get().byWorld(this.getEntityWorld());
 
 		if (gameSpace != null && gameSpace.getBehavior().testRule(DragonOnslaught.DRAGON_COLLISION_DAMAGE) == EventResult.DENY) {
 			ci.cancel();
@@ -64,7 +64,7 @@ public abstract class EnderDragonEntityMixin extends Entity {
 
 	@WrapWithCondition(method = "launchLivingEntities", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/Entity;addVelocity(DDD)V"))
 	private boolean preventPeerLaunching(Entity entity, double x, double y, double z) {
-		GameSpace gameSpace = GameSpaceManager.get().byWorld(entity.getWorld());
+		GameSpace gameSpace = GameSpaceManager.get().byWorld(entity.getEntityWorld());
 
 		if (gameSpace != null && gameSpace.getBehavior().testRule(DragonOnslaught.DRAGON_PEER_LAUNCHING) == EventResult.DENY) {
 			return !(entity instanceof EnderDragonEntity);
@@ -75,7 +75,7 @@ public abstract class EnderDragonEntityMixin extends Entity {
 
 	@ModifyConstant(method = "tickMovement", constant = @Constant(doubleValue = 0.01))
 	private double increaseVerticalMovement(double original) {
-		GameSpace gameSpace = GameSpaceManager.get().byWorld(this.getWorld());
+		GameSpace gameSpace = GameSpaceManager.get().byWorld(this.getEntityWorld());
 
 		if (gameSpace != null && gameSpace.getBehavior().testRule(DragonOnslaught.INCREASED_VERTICAL_DRAGON_MOVEMENT) == EventResult.ALLOW) {
 			return 0.1;
