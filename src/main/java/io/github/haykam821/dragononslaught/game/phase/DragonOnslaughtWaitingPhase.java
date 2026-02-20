@@ -4,10 +4,10 @@ import java.util.Optional;
 
 import io.github.haykam821.dragononslaught.game.DragonOnslaughtConfig;
 import io.github.haykam821.dragononslaught.game.map.DragonOnslaughtMap;
-import net.minecraft.entity.damage.DamageSource;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.ServerLevel;
 import xyz.nucleoid.fantasy.RuntimeWorldConfig;
 import xyz.nucleoid.plasmid.api.game.GameOpenContext;
 import xyz.nucleoid.plasmid.api.game.GameOpenProcedure;
@@ -26,12 +26,12 @@ import xyz.nucleoid.stimuli.event.player.PlayerDeathEvent;
 
 public class DragonOnslaughtWaitingPhase implements GameActivityEvents.RequestStart, GameActivityEvents.Tick, GamePlayerEvents.Accept, PlayerDamageEvent, PlayerDeathEvent {
 	private final GameSpace gameSpace;
-	private final ServerWorld world;
+	private final ServerLevel world;
 	private final DragonOnslaughtMap map;
 	private final DragonOnslaughtConfig config;
 	private final Optional<TeamSelectionLobby> teamSelection;
 
-	public DragonOnslaughtWaitingPhase(GameSpace gameSpace, ServerWorld world, DragonOnslaughtMap map, DragonOnslaughtConfig config, Optional<TeamSelectionLobby> teamSelection) {
+	public DragonOnslaughtWaitingPhase(GameSpace gameSpace, ServerLevel world, DragonOnslaughtMap map, DragonOnslaughtConfig config, Optional<TeamSelectionLobby> teamSelection) {
 		this.gameSpace = gameSpace;
 		this.world = world;
 		this.map = map;
@@ -75,8 +75,8 @@ public class DragonOnslaughtWaitingPhase implements GameActivityEvents.RequestSt
 
 	@Override
 	public void onTick() {
-		for (ServerPlayerEntity player : this.gameSpace.getPlayers()) {
-			if (this.map.isOutOfBounds(player) || player.isTouchingWater()) {
+		for (ServerPlayer player : this.gameSpace.getPlayers()) {
+			if (this.map.isOutOfBounds(player) || player.isInWater()) {
 				this.map.teleportToWaitingSpawn(player);
 			}
 		}
@@ -88,12 +88,12 @@ public class DragonOnslaughtWaitingPhase implements GameActivityEvents.RequestSt
 	}
 
 	@Override
-	public EventResult onDamage(ServerPlayerEntity player, DamageSource source, float amount) {
+	public EventResult onDamage(ServerPlayer player, DamageSource source, float amount) {
 		return EventResult.DENY;
 	}
 
 	@Override
-	public EventResult onDeath(ServerPlayerEntity player, DamageSource source) {
+	public EventResult onDeath(ServerPlayer player, DamageSource source) {
 		this.map.teleportToWaitingSpawn(player);
 		return EventResult.DENY;
 	}

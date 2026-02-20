@@ -3,7 +3,7 @@
 	"package": "io.github.haykam821.dragononslaught.mixin",
 	"compatibilityLevel": "JAVA_21",
 	"mixins": [
-		"EnderDragonEntityMixin"
+      "EnderDragonMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

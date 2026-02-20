@@ -5,49 +5,45 @@ import java.util.function.Function;
 
 import io.github.haykam821.dragononslaught.DragonOnslaught;
 import it.unimi.dsi.fastutil.ints.IntList;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.FireworkExplosionComponent;
-import net.minecraft.component.type.FireworksComponent;
-import net.minecraft.item.Item;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.Registry;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.util.DyeColor;
-import net.minecraft.util.Identifier;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.item.component.FireworkExplosion;
+import net.minecraft.world.item.component.Fireworks;
+import net.minecraft.world.item.Item;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.Registry;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.world.item.DyeColor;
+import net.minecraft.resources.Identifier;
 
 public final class DragonOnslaughtItems {
-	public static final Item LEAP_FEATHER = register("leap_feather", LeapFeatherItem::new, new Item.Settings()
-		.component(DataComponentTypes.ENCHANTMENT_GLINT_OVERRIDE, true)
+	public static final Item LEAP_FEATHER = register("leap_feather", LeapFeatherItem::new, new Item.Properties()
+		.component(DataComponents.ENCHANTMENT_GLINT_OVERRIDE, true)
 		.useCooldown(8)
-		.maxCount(1));
+		.stacksTo(1));
 
-	public static final Item SPARKLER = register("sparkler", SparklerItem::new, new Item.Settings()
-		.component(DataComponentTypes.FIREWORKS, createSparklerFireworks())
+	public static final Item SPARKLER = register("sparkler", SparklerItem::new, new Item.Properties()
+		.component(DataComponents.FIREWORKS, createSparklerFireworks())
 		.useCooldown(0.5f));
 
-	private DragonOnslaughtItems() {
-		return;
-	}
+	private DragonOnslaughtItems() {}
 
-	public static void initialize() {
-		return;
-	}
+	public static void initialize() {}
 
-	private static Item register(String path, Function<Item.Settings, Item> factory, Item.Settings settings) {
+	private static Item register(String path, Function<Item.Properties, Item> factory, Item.Properties settings) {
 		Identifier id = DragonOnslaught.identifier(path);
-		RegistryKey<Item> key = RegistryKey.of(RegistryKeys.ITEM, id);
+		ResourceKey<Item> key = ResourceKey.create(Registries.ITEM, id);
 
-		Item item = factory.apply(settings.registryKey(key));
-		Registry.register(Registries.ITEM, id, item);
+		Item item = factory.apply(settings.setId(key));
+		Registry.register(BuiltInRegistries.ITEM, id, item);
 
 		return item;
 	}
 
-	private static FireworksComponent createSparklerFireworks() {
+	private static Fireworks createSparklerFireworks() {
 		IntList colors = IntList.of(DyeColor.YELLOW.getFireworkColor());
-		FireworkExplosionComponent explosion = new FireworkExplosionComponent(FireworkExplosionComponent.Type.BURST, colors, IntList.of(), false, false);
+		FireworkExplosion explosion = new FireworkExplosion(FireworkExplosion.Shape.BURST, colors, IntList.of(), false, false);
 
-		return new FireworksComponent(0, List.of(explosion));
+		return new Fireworks(0, List.of(explosion));
 	}
 }

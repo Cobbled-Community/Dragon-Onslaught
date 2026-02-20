@@ -1,14 +1,14 @@
 package io.github.haykam821.dragononslaught.game.spawner.target;
 
-import net.minecraft.util.collection.Pool;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.random.WeightedList;
+import net.minecraft.world.phys.Vec3;
 
 public interface DragonTarget {
-	public Vec3d getPos();
+	Vec3 getPos();
 
-	public int getWeight();
+	int getWeight();
 
-	public static void addTo(Pool.Builder<DragonTarget> builder, DragonTarget target) {
+	static void addTo(WeightedList.Builder<DragonTarget> builder, DragonTarget target) {
 		if (target != null) {
 			builder.add(target, target.getWeight());
 		}

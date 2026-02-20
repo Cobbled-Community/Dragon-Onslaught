@@ -8,16 +8,16 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import io.github.haykam821.dragononslaught.game.DragonOnslaughtConfig;
-import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.Text;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.network.chat.Component;
 import net.minecraft.util.Util;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.math.random.Random;
-import net.minecraft.world.GameMode;
-import net.minecraft.world.gen.chunk.ChunkGenerator;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.chunk.ChunkGenerator;
 import xyz.nucleoid.map_templates.MapTemplate;
 import xyz.nucleoid.map_templates.MapTemplateSerializer;
 import xyz.nucleoid.map_templates.TemplateRegion;
@@ -31,8 +31,8 @@ public class DragonOnslaughtMap {
 	private static final String PRIORITY_KEY = "Priority";
 
 	private static final Comparator<TemplateRegion> PRIORITY_COMPARATOR = Comparator.comparingInt(region -> {
-		NbtCompound data = region.getData();
-		return data == null ? 0 : data.getInt(PRIORITY_KEY, 0);
+		CompoundTag data = region.getData();
+		return data == null ? 0 : data.getIntOr(PRIORITY_KEY, 0);
 	});
 
 	private final MapTemplate template;
@@ -41,52 +41,48 @@ public class DragonOnslaughtMap {
 		this.template = template;
 	}
 
-	public boolean isOutOfBounds(ServerPlayerEntity player) {
-		return !this.template.getBounds().contains(player.getBlockPos());
+	public boolean isOutOfBounds(ServerPlayer player) {
+		return !this.template.getBounds().contains(player.blockPosition());
 	}
 
-	public boolean teleportToWaitingSpawn(ServerPlayerEntity player) {
-		return this.teleportToRandomRegion(player, DragonOnslaughtMapMarkers.WAITING_SPAWN);
+	public void teleportToWaitingSpawn(ServerPlayer player) {
+		this.teleportToRandomRegion(player, DragonOnslaughtMapMarkers.WAITING_SPAWN);
 	}
 
-	public JoinAcceptorResult.Teleport acceptWaitingSpawnJoins(JoinAcceptor acceptor, ServerWorld world) {
-		return this.acceptJoins(acceptor, world, DragonOnslaughtMapMarkers.WAITING_SPAWN).thenRunForEach(player -> {
-			player.changeGameMode(GameMode.ADVENTURE);
-		});
+	public JoinAcceptorResult.Teleport acceptWaitingSpawnJoins(JoinAcceptor acceptor, ServerLevel world) {
+		return this.acceptJoins(acceptor, world, DragonOnslaughtMapMarkers.WAITING_SPAWN).thenRunForEach(player -> player.setGameMode(GameType.ADVENTURE));
 	}
 
-	public List<TemplateRegion> getSpawns(Random random) {
+	public List<TemplateRegion> getSpawns(RandomSource random) {
 		return this.getRegions(DragonOnslaughtMapMarkers.SPAWN, random);
 	}
 
-	public boolean teleportToSpectatorSpawn(ServerPlayerEntity player) {
+	public boolean teleportToSpectatorSpawn(ServerPlayer player) {
 		return this.teleportToRandomRegion(player, DragonOnslaughtMapMarkers.SPECTATOR_SPAWN);
 	}
 
-	public JoinAcceptorResult.Teleport acceptSpectatorJoins(JoinAcceptor acceptor, ServerWorld world) {
-		return this.acceptJoins(acceptor, world, DragonOnslaughtMapMarkers.SPECTATOR_SPAWN).thenRunForEach(player -> {
-			player.changeGameMode(GameMode.SPECTATOR);
-		});
+	public JoinAcceptorResult.Teleport acceptSpectatorJoins(JoinAcceptor acceptor, ServerLevel world) {
+		return this.acceptJoins(acceptor, world, DragonOnslaughtMapMarkers.SPECTATOR_SPAWN).thenRunForEach(player -> player.setGameMode(GameType.SPECTATOR));
 	}
 
-	private JoinAcceptorResult.Teleport acceptJoins(JoinAcceptor acceptor, ServerWorld world, String marker) {
+	private JoinAcceptorResult.Teleport acceptJoins(JoinAcceptor acceptor, ServerLevel world, String marker) {
 		TemplateRegion region = this.getRandomRegion(marker, world.getRandom());
 
 		if (region == null) {
-			return acceptor.teleport(world, Vec3d.ZERO);
+			return acceptor.teleport(world, Vec3.ZERO);
 		}
 
 		return this.acceptJoins(acceptor, world, region);
 	}
 
-	private JoinAcceptorResult.Teleport acceptJoins(JoinAcceptor acceptor, ServerWorld world, TemplateRegion region) {
-		Vec3d pos = region.getBounds().centerBottom();
-		float facing = region.getData().getFloat(FACING_KEY, 0);
+	private JoinAcceptorResult.Teleport acceptJoins(JoinAcceptor acceptor, ServerLevel world, TemplateRegion region) {
+		Vec3 pos = region.getBounds().centerBottom();
+		float facing = region.getData().getFloatOr(FACING_KEY, 0);
 
 		return acceptor.teleport(world, pos, facing, 0);
 	}
 
-	private boolean teleportToRandomRegion(ServerPlayerEntity player, String marker) {
+	private boolean teleportToRandomRegion(ServerPlayer player, String marker) {
 		TemplateRegion region = this.getRandomRegion(marker, player.getRandom());
 		if (region == null) return false;
 
@@ -94,28 +90,28 @@ public class DragonOnslaughtMap {
 		return true;
 	}
 
-	public void teleportToRegion(ServerPlayerEntity player, TemplateRegion region) {
-		Vec3d pos = region.getBounds().centerBottom();
-		float facing = region.getData().getFloat(FACING_KEY, 0);
+	public void teleportToRegion(ServerPlayer player, TemplateRegion region) {
+		Vec3 pos = region.getBounds().centerBottom();
+		float facing = region.getData().getFloatOr(FACING_KEY, 0);
 
-		player.teleport(player.getEntityWorld(), pos.getX(), pos.getY(), pos.getZ(), Set.of(), facing, 0, true);
+		player.teleportTo(player.level(), pos.x(), pos.y(), pos.z(), Set.of(), facing, 0, true);
 	}
 
-	public Vec3d getDragonSpawnPos(ServerWorld world) {
+	public Vec3 getDragonSpawnPos(ServerLevel world) {
 		TemplateRegion region = this.getRandomRegion(DragonOnslaughtMapMarkers.DRAGON_SPAWN, world.getRandom());
-		if (region == null) return Vec3d.ZERO;
+		if (region == null) return Vec3.ZERO;
 
 		return region.getBounds().center();
 	}
 
-	private TemplateRegion getRandomRegion(String marker, Random random) {
+	private TemplateRegion getRandomRegion(String marker, RandomSource random) {
 		List<TemplateRegion> regions = getRegions(marker, random);
 		if (regions.isEmpty()) return null;
 
 		return Util.getRandom(regions, random);
 	}
 
-	private List<TemplateRegion> getRegions(String marker, Random random) {
+	private List<TemplateRegion> getRegions(String marker, RandomSource random) {
 		List<TemplateRegion> regions = this.template.getMetadata()
 			.getRegions(marker)
 			.collect(Collectors.toCollection(ArrayList::new));
@@ -135,7 +131,7 @@ public class DragonOnslaughtMap {
 			MapTemplate template = MapTemplateSerializer.loadFromResource(server, config.map().id());
 			return new DragonOnslaughtMap(template);
 		} catch (IOException exception) {
-			throw new GameOpenException(Text.translatable("text.dragononslaught.template_load_failed"), exception);
+			throw new GameOpenException(Component.translatable("text.dragononslaught.template_load_failed"), exception);
 		}
 	}
 }

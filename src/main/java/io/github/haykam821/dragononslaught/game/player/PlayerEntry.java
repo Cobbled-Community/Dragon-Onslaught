@@ -5,24 +5,24 @@ import io.github.haykam821.dragononslaught.game.phase.DragonOnslaughtActivePhase
 import io.github.haykam821.dragononslaught.game.spawner.target.DragonTarget;
 import io.github.haykam821.dragononslaught.game.spawner.target.PlayerDragonTarget;
 import io.github.haykam821.dragononslaught.item.DragonOnslaughtItems;
-import net.minecraft.item.ItemStack;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
-import net.minecraft.world.GameMode;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.network.chat.Component;
+import net.minecraft.ChatFormatting;
+import net.minecraft.world.level.GameType;
 import xyz.nucleoid.map_templates.TemplateRegion;
 import xyz.nucleoid.plasmid.api.util.InventoryUtil;
 
 public class PlayerEntry {
 	private final DragonOnslaughtActivePhase phase;
 
-	private ServerPlayerEntity alivePlayer;
+	private ServerPlayer alivePlayer;
 	private final TeamEntry team;
 
 	private int ticksUntilNextSparkler;
 
-	public PlayerEntry(DragonOnslaughtActivePhase phase, ServerPlayerEntity player, TeamEntry team) {
+	public PlayerEntry(DragonOnslaughtActivePhase phase, ServerPlayer player, TeamEntry team) {
 		this.phase = phase;
 
 		this.alivePlayer = player;
@@ -34,7 +34,7 @@ public class PlayerEntry {
 	/**
 	 * {@return the player entity, or {@code null} if the player has been eliminated}
 	 */
-	public ServerPlayerEntity getAlivePlayer() {
+	public ServerPlayer getAlivePlayer() {
 		return this.alivePlayer;
 	}
 
@@ -47,50 +47,50 @@ public class PlayerEntry {
 	}
 
 	public void spawn(DragonOnslaughtMap map, TemplateRegion spawn) {
-		this.reset(GameMode.ADVENTURE);
+		this.reset(GameType.ADVENTURE);
 
-		this.alivePlayer.giveItemStack(new ItemStack(DragonOnslaughtItems.LEAP_FEATHER));
+		this.alivePlayer.addItem(new ItemStack(DragonOnslaughtItems.LEAP_FEATHER));
 		map.teleportToRegion(this.alivePlayer, spawn);
 	}
 
-	public void tick(ServerWorld world) {
+	public void tick(ServerLevel world) {
 		if (this.alivePlayer != null) {
 			if (this.phase.getMap().isOutOfBounds(this.alivePlayer)) {
 				this.phase.eliminate(this);
 				return;
-			} else if (this.alivePlayer.isTouchingWater()) {
-				this.alivePlayer.damage(world, world.getDamageSources().drown(), 3);
+			} else if (this.alivePlayer.isInWater()) {
+				this.alivePlayer.hurtServer(world, world.damageSources().drown(), 3);
 				if (this.alivePlayer == null) return;
 			}
 
 			this.ticksUntilNextSparkler -= 1;
 
-			if (this.ticksUntilNextSparkler <= 0 && this.alivePlayer.getInventory().count(DragonOnslaughtItems.SPARKLER) < 2) {
+			if (this.ticksUntilNextSparkler <= 0 && this.alivePlayer.getInventory().countItem(DragonOnslaughtItems.SPARKLER) < 2) {
 				this.resetTicksUntilNextSparkler();
-				this.alivePlayer.getInventory().insertStack(8, new ItemStack(DragonOnslaughtItems.SPARKLER));
+				this.alivePlayer.getInventory().add(8, new ItemStack(DragonOnslaughtItems.SPARKLER));
 			}
 		}
 	}
 
-	public Text getWinMessage() {
-		return Text.translatable("text.dragononslaught.win", this.alivePlayer.getDisplayName()).formatted(Formatting.GOLD);
+	public Component getWinMessage() {
+		return Component.translatable("text.dragononslaught.win", this.alivePlayer.getDisplayName()).withStyle(ChatFormatting.GOLD);
 	}
 
-	public Text getEliminationMessage() {
-		return Text.translatable("text.dragononslaught.eliminated", this.alivePlayer.getDisplayName()).formatted(Formatting.RED);
+	public Component getEliminationMessage() {
+		return Component.translatable("text.dragononslaught.eliminated", this.alivePlayer.getDisplayName()).withStyle(ChatFormatting.RED);
 	}
 
 	public DragonTarget getDragonTarget() {
 		return this.alivePlayer == null ? null : new PlayerDragonTarget(this.alivePlayer, this.phase.getConfig());
 	}
 
-	public void reset(GameMode gameMode) {
-		this.alivePlayer.changeGameMode(gameMode);
+	public void reset(GameType gameMode) {
+		this.alivePlayer.setGameMode(gameMode);
 		InventoryUtil.clear(this.alivePlayer);
 	}
 
 	private void resetTicksUntilNextSparkler() {
-		this.ticksUntilNextSparkler = phase.getConfig().sparklerInterval().get(this.phase.getWorld().getRandom());
+		this.ticksUntilNextSparkler = phase.getConfig().sparklerInterval().sample(this.phase.getWorld().getRandom());
 	}
 
 	@Override

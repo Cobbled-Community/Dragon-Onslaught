@@ -19,15 +19,15 @@ import io.github.haykam821.dragononslaught.game.win.FreeForAllWinManager;
 import io.github.haykam821.dragononslaught.game.win.TeamWinManager;
 import io.github.haykam821.dragononslaught.game.win.WinManager;
 import io.github.haykam821.dragononslaught.game.win.WinResult;
-import net.minecraft.block.Blocks;
-import net.minecraft.entity.damage.DamageSource;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.Text;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.network.chat.Component;
 import net.minecraft.util.Util;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.random.Random;
-import net.minecraft.world.GameMode;
+import net.minecraft.core.BlockPos;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.GameType;
 import xyz.nucleoid.map_templates.TemplateRegion;
 import xyz.nucleoid.plasmid.api.game.GameActivity;
 import xyz.nucleoid.plasmid.api.game.GameCloseReason;
@@ -48,8 +48,8 @@ import xyz.nucleoid.stimuli.event.player.PlayerDeathEvent;
 
 public class DragonOnslaughtActivePhase implements GameActivityEvents.Enable, GameActivityEvents.Tick, GamePlayerEvents.Accept, GamePlayerEvents.Remove, PlayerDeathEvent, DragonDestroyBlockEvent {
 	private final GameSpace gameSpace;
-	private final Random random;
-	private final ServerWorld world;
+	private final RandomSource random;
+	private final ServerLevel world;
 	private final DragonOnslaughtMap map;
 	private final DragonOnslaughtConfig config;
 
@@ -61,7 +61,7 @@ public class DragonOnslaughtActivePhase implements GameActivityEvents.Enable, Ga
 
 	private int ticksUntilClose = -1;
 
-	public DragonOnslaughtActivePhase(GameSpace gameSpace, ServerWorld world, DragonOnslaughtMap map, DragonOnslaughtConfig config, Optional<TeamSelectionLobby> maybeTeamSelection, Optional<TeamManager> maybeTeamManager) {
+	public DragonOnslaughtActivePhase(GameSpace gameSpace, ServerLevel world, DragonOnslaughtMap map, DragonOnslaughtConfig config, Optional<TeamSelectionLobby> maybeTeamSelection, Optional<TeamManager> maybeTeamManager) {
 		this.gameSpace = gameSpace;
 		this.world = world;
 		this.random = world.getRandom();
@@ -70,7 +70,7 @@ public class DragonOnslaughtActivePhase implements GameActivityEvents.Enable, Ga
 
 		PlayerSet participants = this.gameSpace.getPlayers().participants();
 
-		List<ServerPlayerEntity> shuffledPlayers = participants.stream().collect(Collectors.toCollection(ArrayList::new));
+		List<ServerPlayer> shuffledPlayers = participants.stream().collect(Collectors.toCollection(ArrayList::new));
 		Util.shuffle(shuffledPlayers, this.random);
 
 		this.players = new ArrayList<>(shuffledPlayers.size());
@@ -78,19 +78,15 @@ public class DragonOnslaughtActivePhase implements GameActivityEvents.Enable, Ga
 		Map<UUID, GameTeamKey> playersToTeams = new HashMap<>();
 		Map<GameTeamKey, TeamEntry> keysToTeams = new HashMap<>();
 
-		maybeTeamSelection.ifPresent(teamSelection -> {
-			teamSelection.allocate(participants, (key, player) -> {
-				playersToTeams.put(player.getUuid(), key);
-				maybeTeamManager.get().addPlayerTo(player, key);
-			});
-		});
+		maybeTeamSelection.ifPresent(teamSelection -> teamSelection.allocate(participants, (key, player) -> {
+            playersToTeams.put(player.getUUID(), key);
+            maybeTeamManager.get().addPlayerTo(player, key);
+        }));
 
-		for (ServerPlayerEntity player : shuffledPlayers) {
-			GameTeamKey key = playersToTeams.get(player.getUuid());
+		for (ServerPlayer player : shuffledPlayers) {
+			GameTeamKey key = playersToTeams.get(player.getUUID());
 
-			TeamEntry team = key == null ? null : keysToTeams.computeIfAbsent(key, k -> {
-				return new TeamEntry(this.config.teams().orElseThrow().byKey(k));
-			});
+			TeamEntry team = key == null ? null : keysToTeams.computeIfAbsent(key, k -> new TeamEntry(this.config.teams().orElseThrow().byKey(k)));
 
 			this.players.add(new PlayerEntry(this, player, team));
 		}
@@ -120,7 +116,7 @@ public class DragonOnslaughtActivePhase implements GameActivityEvents.Enable, Ga
 		activity.deny(GameRuleType.THROW_ITEMS);
 	}
 
-	public static void open(GameSpace gameSpace, ServerWorld world, DragonOnslaughtMap map, DragonOnslaughtConfig config, Optional<TeamSelectionLobby> teamSelection) {
+	public static void open(GameSpace gameSpace, ServerLevel world, DragonOnslaughtMap map, DragonOnslaughtConfig config, Optional<TeamSelectionLobby> teamSelection) {
 		gameSpace.setActivity(activity -> {
 			Optional<TeamManager> maybeTeamManager = config.teams().map(teams -> {
 				TeamManager teamManager = TeamManager.addTo(activity);
@@ -182,7 +178,7 @@ public class DragonOnslaughtActivePhase implements GameActivityEvents.Enable, Ga
 
 		if (win != null) {
 			this.gameSpace.getPlayers().sendMessage(win.message());
-			this.ticksUntilClose = this.config.ticksUntilClose().get(this.random);
+			this.ticksUntilClose = this.config.ticksUntilClose().sample(this.random);
 		}
 	}
 
@@ -192,20 +188,20 @@ public class DragonOnslaughtActivePhase implements GameActivityEvents.Enable, Ga
 	}
 
 	@Override
-	public void onRemovePlayer(ServerPlayerEntity player) {
+	public void onRemovePlayer(ServerPlayer player) {
 		this.eliminate(this.getPlayerEntry(player));
 	}
 
 	@Override
-	public EventResult onDeath(ServerPlayerEntity player, DamageSource source) {
+	public EventResult onDeath(ServerPlayer player, DamageSource source) {
 		this.eliminate(this.getPlayerEntry(player));
 		return EventResult.DENY;
 	}
 
 	@Override
-	public void onDragonDestroyBlock(ServerWorld world, BlockPos pos) {
+	public void onDragonDestroyBlock(ServerLevel world, BlockPos pos) {
 		if (this.shouldDestroyFluid(pos)) {
-			world.setBlockState(pos, Blocks.AIR.getDefaultState());
+			world.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
 		}
 	}
 
@@ -213,30 +209,28 @@ public class DragonOnslaughtActivePhase implements GameActivityEvents.Enable, Ga
 
 	/**
 	 * Attempts to eliminate a player.
-	 * @return whether an elimination has occurred
 	 */
-	public boolean eliminate(PlayerEntry player) {
-		if (this.isGameEnding()) return false;
+	public void eliminate(PlayerEntry player) {
+		if (this.isGameEnding()) return;
 
-		if (player == null) return false;
-		if (player.getAlivePlayer() == null) return false;
+		if (player == null) return;
+		if (player.getAlivePlayer() == null) return;
 
 		// Send elimination message
-		Text message = player.getEliminationMessage();
+		Component message = player.getEliminationMessage();
 		this.gameSpace.getPlayers().sendMessage(message);
 
 		// Perform removal operations
-		player.reset(GameMode.SPECTATOR);
+		player.reset(GameType.SPECTATOR);
 		player.clearAlivePlayer();
 
-		return true;
 	}
 
-	public Random getRandom() {
+	public RandomSource getRandom() {
 		return this.random;
 	}
 
-	public ServerWorld getWorld() {
+	public ServerLevel getWorld() {
 		return this.world;
 	}
 
@@ -263,14 +257,11 @@ public class DragonOnslaughtActivePhase implements GameActivityEvents.Enable, Ga
 	private boolean shouldDestroyFluid(BlockPos pos) {
 		Optional<Integer> seaLevel = this.config.map().seaLevel();
 
-		if (seaLevel.isEmpty()) {
-			return true;
-		}
+        return seaLevel.map(integer -> pos.getY() > integer).orElse(true);
 
-		return pos.getY() > seaLevel.get();
-	}
+    }
 
-	private PlayerEntry getPlayerEntry(ServerPlayerEntity player) {
+	private PlayerEntry getPlayerEntry(ServerPlayer player) {
 		if (player != null) {
 			for (PlayerEntry entry : this.players) {
 				if (player == entry.getAlivePlayer()) {

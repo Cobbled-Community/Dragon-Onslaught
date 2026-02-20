@@ -5,7 +5,7 @@ import io.github.haykam821.dragononslaught.game.DragonOnslaughtConfig;
 import io.github.haykam821.dragononslaught.game.phase.DragonOnslaughtWaitingPhase;
 import io.github.haykam821.dragononslaught.item.DragonOnslaughtItems;
 import net.fabricmc.api.ModInitializer;
-import net.minecraft.util.Identifier;
+import net.minecraft.resources.Identifier;
 import xyz.nucleoid.plasmid.api.game.GameType;
 import xyz.nucleoid.plasmid.api.game.GameTypes;
 import xyz.nucleoid.plasmid.api.game.rule.GameRuleType;
@@ -27,6 +27,6 @@ public class DragonOnslaught implements ModInitializer {
 	}
 
 	public static Identifier identifier(String path) {
-		return Identifier.of(MOD_ID, path);
+		return Identifier.fromNamespaceAndPath(MOD_ID, path);
 	}
 }

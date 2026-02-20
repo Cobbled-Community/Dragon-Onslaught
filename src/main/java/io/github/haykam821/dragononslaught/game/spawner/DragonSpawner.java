@@ -8,19 +8,19 @@ import io.github.haykam821.dragononslaught.entity.SparklerEntity;
 import io.github.haykam821.dragononslaught.game.phase.DragonOnslaughtActivePhase;
 import io.github.haykam821.dragononslaught.game.player.PlayerEntry;
 import io.github.haykam821.dragononslaught.game.spawner.target.DragonTarget;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.boss.dragon.EnderDragonEntity;
-import net.minecraft.entity.boss.dragon.phase.ChargingPlayerPhase;
-import net.minecraft.entity.boss.dragon.phase.HoldingPatternPhase;
-import net.minecraft.entity.boss.dragon.phase.Phase;
-import net.minecraft.entity.boss.dragon.phase.PhaseManager;
-import net.minecraft.entity.boss.dragon.phase.PhaseType;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.TypeFilter;
-import net.minecraft.util.collection.Pool;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
+import net.minecraft.world.entity.boss.enderdragon.phases.DragonChargePlayerPhase;
+import net.minecraft.world.entity.boss.enderdragon.phases.DragonHoldingPatternPhase;
+import net.minecraft.world.entity.boss.enderdragon.phases.DragonPhaseInstance;
+import net.minecraft.world.entity.boss.enderdragon.phases.EnderDragonPhaseManager;
+import net.minecraft.world.entity.boss.enderdragon.phases.EnderDragonPhase;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.entity.EntityTypeTest;
+import net.minecraft.util.random.WeightedList;
+import net.minecraft.util.Mth;
+import net.minecraft.world.phys.Vec3;
 
 public class DragonSpawner {
 	private static final double MAX_YAW_DEVIATION = 15;
@@ -28,7 +28,7 @@ public class DragonSpawner {
 	private final DragonSpawnerConfig config;
 	private final DragonOnslaughtActivePhase phase;
 
-	private final List<EnderDragonEntity> dragons = new ArrayList<>();
+	private final List<EnderDragon> dragons = new ArrayList<>();
 
 	private int ticksUntilDragonSpawn;
 
@@ -36,23 +36,23 @@ public class DragonSpawner {
 		this.config = config;
 		this.phase = phase;
 
-		this.ticksUntilDragonSpawn = config.initialDelay().get(this.phase.getRandom());
+		this.ticksUntilDragonSpawn = config.initialDelay().sample(this.phase.getRandom());
 	}
 
 	public void tick() {
 		this.ticksUntilDragonSpawn -= 1;
 
 		if (this.ticksUntilDragonSpawn <= 0 && this.dragons.size() < this.config.maximum()) {
-			this.ticksUntilDragonSpawn = this.config.interval().get(this.phase.getRandom());
+			this.ticksUntilDragonSpawn = this.config.interval().sample(this.phase.getRandom());
 
-			Vec3d targetPos = this.getTargetPos();
+			Vec3 targetPos = this.getTargetPos();
 
 			if (targetPos != null) {
-				ServerWorld world = this.phase.getWorld();
-				Vec3d spawnPos = this.phase.getMap().getDragonSpawnPos(world);
+				ServerLevel world = this.phase.getWorld();
+				Vec3 spawnPos = this.phase.getMap().getDragonSpawnPos(world);
 
-				EnderDragonEntity dragon = new EnderDragonEntity(EntityType.ENDER_DRAGON, world);
-				dragon.setPosition(spawnPos.getX(), spawnPos.getY(), spawnPos.getZ());
+				EnderDragon dragon = new EnderDragon(EntityType.ENDER_DRAGON, world);
+				dragon.setPos(spawnPos.x(), spawnPos.y(), spawnPos.z());
 
 				chargeTowards(dragon, targetPos);
 
@@ -60,70 +60,70 @@ public class DragonSpawner {
 				double dy = targetPos.y - spawnPos.y;
 				double dz = targetPos.z - spawnPos.z;
 
-				double deviation = dragon.getRandom().nextTriangular(90, MAX_YAW_DEVIATION);
+				double deviation = dragon.getRandom().triangle(90, MAX_YAW_DEVIATION);
 
-				float yaw = (float) ((MathHelper.atan2(dx, dz) * MathHelper.DEGREES_PER_RADIAN) + deviation);
-				float pitch = (float) (-MathHelper.atan2(dy, Math.sqrt(dx * dx + dz * dz)) * MathHelper.DEGREES_PER_RADIAN);
+				float yaw = (float) ((Mth.atan2(dx, dz) * Mth.RAD_TO_DEG) + deviation);
+				float pitch = (float) (-Mth.atan2(dy, Math.sqrt(dx * dx + dz * dz)) * Mth.RAD_TO_DEG);
 
-				dragon.setYaw(yaw);
-				dragon.lastYaw = yaw;
+				dragon.setYRot(yaw);
+				dragon.yRotO = yaw;
 
-				dragon.setHeadYaw(yaw);
-				dragon.lastHeadYaw = yaw;
+				dragon.setYHeadRot(yaw);
+				dragon.yHeadRotO = yaw;
 
-				dragon.setBodyYaw(yaw);
-				dragon.lastBodyYaw = yaw;
+				dragon.setYBodyRot(yaw);
+				dragon.yBodyRotO = yaw;
 
-				dragon.setPitch(pitch);
-				dragon.lastPitch = pitch;
+				dragon.setXRot(pitch);
+				dragon.xRotO = pitch;
 
-				world.spawnEntity(dragon);
+				world.addFreshEntity(dragon);
 				this.dragons.add(dragon);
 			}
 		}
 
-		Iterator<EnderDragonEntity> iterator = this.dragons.iterator();
+		Iterator<EnderDragon> iterator = this.dragons.iterator();
 
 		while (iterator.hasNext()) {
-			EnderDragonEntity dragon = iterator.next();
+			EnderDragon dragon = iterator.next();
 
 			if (dragon.isRemoved()) {
 				iterator.remove();
 			} else {
-				PhaseManager phaseManager = dragon.getPhaseManager();
-				Phase phase = phaseManager.getCurrent();
+				EnderDragonPhaseManager phaseManager = dragon.getPhaseManager();
+				DragonPhaseInstance phase = phaseManager.getCurrentPhase();
 
-				if (!(phase instanceof ChargingPlayerPhase) && !(phase instanceof HoldingPatternPhase)) {
-					Vec3d targetPos = this.getTargetPos();
+				if (!(phase instanceof DragonChargePlayerPhase) && !(phase instanceof DragonHoldingPatternPhase)) {
+					Vec3 targetPos = this.getTargetPos();
 					chargeTowards(dragon, targetPos);
 				}
 			}
 		}
 	}
 
-	public Vec3d getTargetPos() {
-		Pool.Builder<DragonTarget> builder = Pool.builder();
+	public Vec3 getTargetPos() {
+		WeightedList.Builder<DragonTarget> builder = WeightedList.builder();
 
 		for (PlayerEntry player : this.phase.getPlayers()) {
 			DragonTarget.addTo(builder, player.getDragonTarget());
 		}
 
-		for (SparklerEntity sparkler : this.phase.getWorld().getEntitiesByType(TypeFilter.instanceOf(SparklerEntity.class), Entity::isAlive)) {
+		for (SparklerEntity sparkler : this.phase.getWorld().getEntities(EntityTypeTest.forClass(SparklerEntity.class), Entity::isAlive)) {
 			DragonTarget.addTo(builder, sparkler.getDragonTarget());
 		}
 
 		return builder.build()
-			.getOrEmpty(this.phase.getRandom())
+			.getRandom(this.phase.getRandom())
 			.map(DragonTarget::getPos)
 			.orElse(null);
 	}
 
-	private static void chargeTowards(EnderDragonEntity dragon, Vec3d pos) {
+	private static void chargeTowards(EnderDragon dragon, Vec3 pos) {
 		if (pos != null) {
-			PhaseManager phaseManager = dragon.getPhaseManager();
+			EnderDragonPhaseManager phaseManager = dragon.getPhaseManager();
 
-			phaseManager.setPhase(PhaseType.CHARGING_PLAYER);
-			phaseManager.create(PhaseType.CHARGING_PLAYER).setPathTarget(pos);
+			phaseManager.setPhase(EnderDragonPhase.CHARGING_PLAYER);
+			phaseManager.getPhase(EnderDragonPhase.CHARGING_PLAYER).setTarget(pos);
 		}
 	}
 }
