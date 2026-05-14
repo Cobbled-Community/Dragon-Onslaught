@@ -4,6 +4,7 @@ import eu.pb4.polymer.core.api.entity.PolymerEntity;
 import io.github.haykam821.dragononslaught.game.spawner.target.DragonTarget;
 import io.github.haykam821.dragononslaught.game.spawner.target.SparklerDragonTarget;
 import io.github.haykam821.dragononslaught.item.DragonOnslaughtItems;
+import net.fabricmc.fabric.api.networking.v1.context.PacketContext;
 import net.minecraft.SharedConstants;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.component.Fireworks;
@@ -17,7 +18,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.level.Level;
-import xyz.nucleoid.packettweaker.PacketContext;
 
 public class SparklerEntity extends ItemEntity implements PolymerEntity {
 	private static final int DURATION = SharedConstants.TICKS_PER_SECOND * 5;
@@ -57,15 +57,15 @@ public class SparklerEntity extends ItemEntity implements PolymerEntity {
 		return EntityType.ITEM;
 	}
 
-	private static void spawnFireworks(ServerLevel world, Vec3 pos, Fireworks fireworks) {
+	private static void spawnFireworks(ServerLevel level, Vec3 pos, Fireworks fireworks) {
 		ItemStack stack = new ItemStack(Items.FIREWORK_ROCKET);
 		stack.set(DataComponents.FIREWORKS, fireworks);
 
-		FireworkRocketEntity rocket = new FireworkRocketEntity(world, pos.x(), pos.y(), pos.z(), stack);
+		FireworkRocketEntity rocket = new FireworkRocketEntity(level, pos.x(), pos.y(), pos.z(), stack);
 
 		// Immediately explode the firework rocket on the client
-		world.addFreshEntity(rocket);
-		world.broadcastEntityEvent(rocket, EntityEvent.FIREWORKS_EXPLODE);
+		level.addFreshEntity(rocket);
+		level.broadcastEntityEvent(rocket, EntityEvent.FIREWORKS_EXPLODE);
 
 		rocket.discard();
 	}

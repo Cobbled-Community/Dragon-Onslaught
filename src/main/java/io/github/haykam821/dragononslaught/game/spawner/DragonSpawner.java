@@ -48,10 +48,10 @@ public class DragonSpawner {
 			Vec3 targetPos = this.getTargetPos();
 
 			if (targetPos != null) {
-				ServerLevel world = this.phase.getWorld();
-				Vec3 spawnPos = this.phase.getMap().getDragonSpawnPos(world);
+				ServerLevel level = this.phase.getLevel();
+				Vec3 spawnPos = this.phase.getMap().getDragonSpawnPos(level);
 
-				EnderDragon dragon = new EnderDragon(EntityType.ENDER_DRAGON, world);
+				EnderDragon dragon = new EnderDragon(EntityType.ENDER_DRAGON, level);
 				dragon.setPos(spawnPos.x(), spawnPos.y(), spawnPos.z());
 
 				chargeTowards(dragon, targetPos);
@@ -77,7 +77,7 @@ public class DragonSpawner {
 				dragon.setXRot(pitch);
 				dragon.xRotO = pitch;
 
-				world.addFreshEntity(dragon);
+				level.addFreshEntity(dragon);
 				this.dragons.add(dragon);
 			}
 		}
@@ -108,7 +108,7 @@ public class DragonSpawner {
 			DragonTarget.addTo(builder, player.getDragonTarget());
 		}
 
-		for (SparklerEntity sparkler : this.phase.getWorld().getEntities(EntityTypeTest.forClass(SparklerEntity.class), Entity::isAlive)) {
+		for (SparklerEntity sparkler : this.phase.getLevel().getEntities(EntityTypeTest.forClass(SparklerEntity.class), Entity::isAlive)) {
 			DragonTarget.addTo(builder, sparkler.getDragonTarget());
 		}
 

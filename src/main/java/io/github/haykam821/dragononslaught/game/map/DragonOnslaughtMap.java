@@ -24,7 +24,7 @@ import xyz.nucleoid.map_templates.TemplateRegion;
 import xyz.nucleoid.plasmid.api.game.GameOpenException;
 import xyz.nucleoid.plasmid.api.game.player.JoinAcceptor;
 import xyz.nucleoid.plasmid.api.game.player.JoinAcceptorResult;
-import xyz.nucleoid.plasmid.api.game.world.generator.TemplateChunkGenerator;
+import xyz.nucleoid.plasmid.api.game.level.generator.TemplateChunkGenerator;
 
 public class DragonOnslaughtMap {
 	private static final String FACING_KEY = "Facing";
@@ -49,8 +49,8 @@ public class DragonOnslaughtMap {
 		this.teleportToRandomRegion(player, DragonOnslaughtMapMarkers.WAITING_SPAWN);
 	}
 
-	public JoinAcceptorResult.Teleport acceptWaitingSpawnJoins(JoinAcceptor acceptor, ServerLevel world) {
-		return this.acceptJoins(acceptor, world, DragonOnslaughtMapMarkers.WAITING_SPAWN).thenRunForEach(player -> player.setGameMode(GameType.ADVENTURE));
+	public JoinAcceptorResult.Teleport acceptWaitingSpawnJoins(JoinAcceptor acceptor, ServerLevel level) {
+		return this.acceptJoins(acceptor, level, DragonOnslaughtMapMarkers.WAITING_SPAWN).thenRunForEach(player -> player.setGameMode(GameType.ADVENTURE));
 	}
 
 	public List<TemplateRegion> getSpawns(RandomSource random) {
@@ -61,25 +61,25 @@ public class DragonOnslaughtMap {
 		return this.teleportToRandomRegion(player, DragonOnslaughtMapMarkers.SPECTATOR_SPAWN);
 	}
 
-	public JoinAcceptorResult.Teleport acceptSpectatorJoins(JoinAcceptor acceptor, ServerLevel world) {
-		return this.acceptJoins(acceptor, world, DragonOnslaughtMapMarkers.SPECTATOR_SPAWN).thenRunForEach(player -> player.setGameMode(GameType.SPECTATOR));
+	public JoinAcceptorResult.Teleport acceptSpectatorJoins(JoinAcceptor acceptor, ServerLevel level) {
+		return this.acceptJoins(acceptor, level, DragonOnslaughtMapMarkers.SPECTATOR_SPAWN).thenRunForEach(player -> player.setGameMode(GameType.SPECTATOR));
 	}
 
-	private JoinAcceptorResult.Teleport acceptJoins(JoinAcceptor acceptor, ServerLevel world, String marker) {
-		TemplateRegion region = this.getRandomRegion(marker, world.getRandom());
+	private JoinAcceptorResult.Teleport acceptJoins(JoinAcceptor acceptor, ServerLevel level, String marker) {
+		TemplateRegion region = this.getRandomRegion(marker, level.getRandom());
 
 		if (region == null) {
-			return acceptor.teleport(world, Vec3.ZERO);
+			return acceptor.teleport(level, Vec3.ZERO);
 		}
 
-		return this.acceptJoins(acceptor, world, region);
+		return this.acceptJoins(acceptor, level, region);
 	}
 
-	private JoinAcceptorResult.Teleport acceptJoins(JoinAcceptor acceptor, ServerLevel world, TemplateRegion region) {
+	private JoinAcceptorResult.Teleport acceptJoins(JoinAcceptor acceptor, ServerLevel level, TemplateRegion region) {
 		Vec3 pos = region.getBounds().centerBottom();
 		float facing = region.getData().getFloatOr(FACING_KEY, 0);
 
-		return acceptor.teleport(world, pos, facing, 0);
+		return acceptor.teleport(level, pos, facing, 0);
 	}
 
 	private boolean teleportToRandomRegion(ServerPlayer player, String marker) {
@@ -97,8 +97,8 @@ public class DragonOnslaughtMap {
 		player.teleportTo(player.level(), pos.x(), pos.y(), pos.z(), Set.of(), facing, 0, true);
 	}
 
-	public Vec3 getDragonSpawnPos(ServerLevel world) {
-		TemplateRegion region = this.getRandomRegion(DragonOnslaughtMapMarkers.DRAGON_SPAWN, world.getRandom());
+	public Vec3 getDragonSpawnPos(ServerLevel level) {
+		TemplateRegion region = this.getRandomRegion(DragonOnslaughtMapMarkers.DRAGON_SPAWN, level.getRandom());
 		if (region == null) return Vec3.ZERO;
 
 		return region.getBounds().center();

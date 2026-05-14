@@ -53,13 +53,13 @@ public class PlayerEntry {
 		map.teleportToRegion(this.alivePlayer, spawn);
 	}
 
-	public void tick(ServerLevel world) {
+	public void tick(ServerLevel level) {
 		if (this.alivePlayer != null) {
 			if (this.phase.getMap().isOutOfBounds(this.alivePlayer)) {
 				this.phase.eliminate(this);
 				return;
 			} else if (this.alivePlayer.isInWater()) {
-				this.alivePlayer.hurtServer(world, world.damageSources().drown(), 3);
+				this.alivePlayer.hurtServer(level, level.damageSources().drown(), 3);
 				if (this.alivePlayer == null) return;
 			}
 
@@ -90,7 +90,7 @@ public class PlayerEntry {
 	}
 
 	private void resetTicksUntilNextSparkler() {
-		this.ticksUntilNextSparkler = phase.getConfig().sparklerInterval().sample(this.phase.getWorld().getRandom());
+		this.ticksUntilNextSparkler = phase.getConfig().sparklerInterval().sample(this.phase.getLevel().getRandom());
 	}
 
 	@Override

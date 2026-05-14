@@ -49,7 +49,7 @@ import xyz.nucleoid.stimuli.event.player.PlayerDeathEvent;
 public class DragonOnslaughtActivePhase implements GameActivityEvents.Enable, GameActivityEvents.Tick, GamePlayerEvents.Accept, GamePlayerEvents.Remove, PlayerDeathEvent, DragonDestroyBlockEvent {
 	private final GameSpace gameSpace;
 	private final RandomSource random;
-	private final ServerLevel world;
+	private final ServerLevel level;
 	private final DragonOnslaughtMap map;
 	private final DragonOnslaughtConfig config;
 
@@ -61,10 +61,10 @@ public class DragonOnslaughtActivePhase implements GameActivityEvents.Enable, Ga
 
 	private int ticksUntilClose = -1;
 
-	public DragonOnslaughtActivePhase(GameSpace gameSpace, ServerLevel world, DragonOnslaughtMap map, DragonOnslaughtConfig config, Optional<TeamSelectionLobby> maybeTeamSelection, Optional<TeamManager> maybeTeamManager) {
+	public DragonOnslaughtActivePhase(GameSpace gameSpace, ServerLevel level, DragonOnslaughtMap map, DragonOnslaughtConfig config, Optional<TeamSelectionLobby> maybeTeamSelection, Optional<TeamManager> maybeTeamManager) {
 		this.gameSpace = gameSpace;
-		this.world = world;
-		this.random = world.getRandom();
+		this.level = level;
+		this.random = level.getRandom();
 		this.map = map;
 		this.config = config;
 
@@ -116,7 +116,7 @@ public class DragonOnslaughtActivePhase implements GameActivityEvents.Enable, Ga
 		activity.deny(GameRuleType.THROW_ITEMS);
 	}
 
-	public static void open(GameSpace gameSpace, ServerLevel world, DragonOnslaughtMap map, DragonOnslaughtConfig config, Optional<TeamSelectionLobby> teamSelection) {
+	public static void open(GameSpace gameSpace, ServerLevel level, DragonOnslaughtMap map, DragonOnslaughtConfig config, Optional<TeamSelectionLobby> teamSelection) {
 		gameSpace.setActivity(activity -> {
 			Optional<TeamManager> maybeTeamManager = config.teams().map(teams -> {
 				TeamManager teamManager = TeamManager.addTo(activity);
@@ -127,7 +127,7 @@ public class DragonOnslaughtActivePhase implements GameActivityEvents.Enable, Ga
 				return teamManager;
 			});
 
-			DragonOnslaughtActivePhase phase = new DragonOnslaughtActivePhase(gameSpace, world, map, config, teamSelection, maybeTeamManager);
+			DragonOnslaughtActivePhase phase = new DragonOnslaughtActivePhase(gameSpace, level, map, config, teamSelection, maybeTeamManager);
 			DragonOnslaughtActivePhase.setRules(activity);
 
 			// Listeners
@@ -169,7 +169,7 @@ public class DragonOnslaughtActivePhase implements GameActivityEvents.Enable, Ga
 		}
 
 		for (PlayerEntry entry : this.players) {
-			entry.tick(this.world);
+			entry.tick(this.level);
 		}
 
 		this.dragonSpawner.tick();
@@ -184,7 +184,7 @@ public class DragonOnslaughtActivePhase implements GameActivityEvents.Enable, Ga
 
 	@Override
 	public JoinAcceptorResult onAcceptPlayers(JoinAcceptor acceptor) {
-		return this.map.acceptSpectatorJoins(acceptor, world);
+		return this.map.acceptSpectatorJoins(acceptor, level);
 	}
 
 	@Override
@@ -230,8 +230,8 @@ public class DragonOnslaughtActivePhase implements GameActivityEvents.Enable, Ga
 		return this.random;
 	}
 
-	public ServerLevel getWorld() {
-		return this.world;
+	public ServerLevel getLevel() {
+		return this.level;
 	}
 
 	public DragonOnslaughtMap getMap() {

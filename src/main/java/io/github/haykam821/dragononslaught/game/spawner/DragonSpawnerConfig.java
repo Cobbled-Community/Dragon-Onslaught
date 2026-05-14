@@ -8,6 +8,7 @@ import net.minecraft.SharedConstants;
 import net.minecraft.util.ExtraCodecs;
 import net.minecraft.util.valueproviders.ConstantInt;
 import net.minecraft.util.valueproviders.IntProvider;
+import net.minecraft.util.valueproviders.IntProviders;
 
 public record DragonSpawnerConfig(
         IntProvider initialDelay,
@@ -20,11 +21,11 @@ public record DragonSpawnerConfig(
 		32
 	);
 
-	public static final Codec<DragonSpawnerConfig> UNIFORM_CODEC = IntProvider.NON_NEGATIVE_CODEC.xmap(provider -> new DragonSpawnerConfig(provider, provider, DEFAULT.maximum()), DragonSpawnerConfig::interval);
+	public static final Codec<DragonSpawnerConfig> UNIFORM_CODEC = IntProviders.NON_NEGATIVE_CODEC.xmap(provider -> new DragonSpawnerConfig(provider, provider, DEFAULT.maximum()), DragonSpawnerConfig::interval);
 
 	public static final Codec<DragonSpawnerConfig> RECORD_CODEC = RecordCodecBuilder.create(instance -> instance.group(
-        IntProvider.NON_NEGATIVE_CODEC.optionalFieldOf("initial_delay", DEFAULT.initialDelay()).forGetter(DragonSpawnerConfig::initialDelay),
-        IntProvider.NON_NEGATIVE_CODEC.optionalFieldOf("interval", DEFAULT.interval()).forGetter(DragonSpawnerConfig::interval),
+        IntProviders.NON_NEGATIVE_CODEC.optionalFieldOf("initial_delay", DEFAULT.initialDelay()).forGetter(DragonSpawnerConfig::initialDelay),
+        IntProviders.NON_NEGATIVE_CODEC.optionalFieldOf("interval", DEFAULT.interval()).forGetter(DragonSpawnerConfig::interval),
         ExtraCodecs.POSITIVE_INT.optionalFieldOf("maximum", DEFAULT.maximum()).forGetter(DragonSpawnerConfig::maximum)
     ).apply(instance, DragonSpawnerConfig::new));
 

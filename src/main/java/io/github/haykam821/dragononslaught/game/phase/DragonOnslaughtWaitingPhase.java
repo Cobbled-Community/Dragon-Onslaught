@@ -8,7 +8,7 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.level.ServerLevel;
-import xyz.nucleoid.fantasy.RuntimeWorldConfig;
+import xyz.nucleoid.fantasy.RuntimeLevelConfig;
 import xyz.nucleoid.plasmid.api.game.GameOpenContext;
 import xyz.nucleoid.plasmid.api.game.GameOpenProcedure;
 import xyz.nucleoid.plasmid.api.game.GameResult;
@@ -26,14 +26,14 @@ import xyz.nucleoid.stimuli.event.player.PlayerDeathEvent;
 
 public class DragonOnslaughtWaitingPhase implements GameActivityEvents.RequestStart, GameActivityEvents.Tick, GamePlayerEvents.Accept, PlayerDamageEvent, PlayerDeathEvent {
 	private final GameSpace gameSpace;
-	private final ServerLevel world;
+	private final ServerLevel level;
 	private final DragonOnslaughtMap map;
 	private final DragonOnslaughtConfig config;
 	private final Optional<TeamSelectionLobby> teamSelection;
 
-	public DragonOnslaughtWaitingPhase(GameSpace gameSpace, ServerLevel world, DragonOnslaughtMap map, DragonOnslaughtConfig config, Optional<TeamSelectionLobby> teamSelection) {
+	public DragonOnslaughtWaitingPhase(GameSpace gameSpace, ServerLevel level, DragonOnslaughtMap map, DragonOnslaughtConfig config, Optional<TeamSelectionLobby> teamSelection) {
 		this.gameSpace = gameSpace;
-		this.world = world;
+		this.level = level;
 		this.map = map;
 		this.config = config;
 		this.teamSelection = teamSelection;
@@ -45,12 +45,12 @@ public class DragonOnslaughtWaitingPhase implements GameActivityEvents.RequestSt
 
 		DragonOnslaughtMap map = DragonOnslaughtMap.create(server, config);
 
-		RuntimeWorldConfig worldConfig = new RuntimeWorldConfig()
+		RuntimeLevelConfig levelConfig = new RuntimeLevelConfig()
 			.setGenerator(map.createGenerator(context.server()));
 
-		return context.openWithWorld(worldConfig, (activity, world) -> {
+		return context.openWithLevel(levelConfig, (activity, level) -> {
 			Optional<TeamSelectionLobby> teamSelection = config.teams().map(teams -> TeamSelectionLobby.addTo(activity, teams));
-			DragonOnslaughtWaitingPhase phase = new DragonOnslaughtWaitingPhase(activity.getGameSpace(), world, map, config, teamSelection);
+			DragonOnslaughtWaitingPhase phase = new DragonOnslaughtWaitingPhase(activity.getGameSpace(), level, map, config, teamSelection);
 
 			GameWaitingLobby.addTo(activity, config.playerConfig());
 			DragonOnslaughtActivePhase.setRules(activity);
@@ -69,7 +69,7 @@ public class DragonOnslaughtWaitingPhase implements GameActivityEvents.RequestSt
 
 	@Override
 	public GameResult onRequestStart() {
-		DragonOnslaughtActivePhase.open(this.gameSpace, this.world, this.map, this.config, this.teamSelection);
+		DragonOnslaughtActivePhase.open(this.gameSpace, this.level, this.map, this.config, this.teamSelection);
 		return GameResult.ok();
 	}
 
@@ -84,7 +84,7 @@ public class DragonOnslaughtWaitingPhase implements GameActivityEvents.RequestSt
 
 	@Override
 	public JoinAcceptorResult onAcceptPlayers(JoinAcceptor acceptor) {
-		return this.map.acceptWaitingSpawnJoins(acceptor, world);
+		return this.map.acceptWaitingSpawnJoins(acceptor, level);
 	}
 
 	@Override

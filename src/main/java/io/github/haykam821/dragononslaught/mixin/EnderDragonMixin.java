@@ -34,17 +34,17 @@ import xyz.nucleoid.stimuli.event.EventResult;
 
 @Mixin(EnderDragon.class)
 public abstract class EnderDragonMixin extends Entity {
-	private EnderDragonMixin(EntityType<?> type, Level world) {
-		super(type, world);
+	private EnderDragonMixin(EntityType<?> type, Level level) {
+		super(type, level);
 	}
 
 	@WrapOperation(method = "knockBack", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/boss/enderdragon/phases/DragonPhaseInstance;isSitting()Z"))
-	private boolean preventLaunchDamage(DragonPhaseInstance phase, Operation<Boolean> operation, ServerLevel world, List<Entity> entities, @Local LocalRef<LivingEntity> entity) {
-		GameSpace gameSpace = GameSpaceManager.get().byWorld(world);
+	private boolean preventLaunchDamage(DragonPhaseInstance phase, Operation<Boolean> operation, ServerLevel level, List<Entity> entities, @Local LocalRef<LivingEntity> entity) {
+		GameSpace gameSpace = GameSpaceManager.get().byLevel(level);
 
 		if (gameSpace != null && gameSpace.getBehavior().testRule(DragonOnslaught.DRAGON_COLLISION_DAMAGE) == EventResult.DENY) {
 			DamageSource source = this.damageSources().mobAttack((EnderDragon) (Object) this);
-			entity.get().hurtServer(world, source, Float.MIN_VALUE);
+			entity.get().hurtServer(level, source, Float.MIN_VALUE);
 
 			// Prevents entering if-statement block that checks !this.phaseManager.getCurrent().isSittingOrHovering()
 			return true;
@@ -55,7 +55,7 @@ public abstract class EnderDragonMixin extends Entity {
 
 	@Inject(method = "hurt", at = @At("HEAD"), cancellable = true)
 	private void preventCollisionDamage(CallbackInfo ci) {
-		GameSpace gameSpace = GameSpaceManager.get().byWorld(this.level());
+		GameSpace gameSpace = GameSpaceManager.get().byLevel(this.level());
 
 		if (gameSpace != null && gameSpace.getBehavior().testRule(DragonOnslaught.DRAGON_COLLISION_DAMAGE) == EventResult.DENY) {
 			ci.cancel();
@@ -64,7 +64,7 @@ public abstract class EnderDragonMixin extends Entity {
 
 	@WrapWithCondition(method = "knockBack", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/Entity;push(DDD)V"))
 	private boolean preventPeerLaunching(Entity entity, double x, double y, double z) {
-		GameSpace gameSpace = GameSpaceManager.get().byWorld(entity.level());
+		GameSpace gameSpace = GameSpaceManager.get().byLevel(entity.level());
 
 		if (gameSpace != null && gameSpace.getBehavior().testRule(DragonOnslaught.DRAGON_PEER_LAUNCHING) == EventResult.DENY) {
 			return !(entity instanceof EnderDragon);
@@ -75,7 +75,7 @@ public abstract class EnderDragonMixin extends Entity {
 
 	@ModifyConstant(method = "aiStep", constant = @Constant(doubleValue = 0.01))
 	private double increaseVerticalMovement(double original) {
-		GameSpace gameSpace = GameSpaceManager.get().byWorld(this.level());
+		GameSpace gameSpace = GameSpaceManager.get().byLevel(this.level());
 
 		if (gameSpace != null && gameSpace.getBehavior().testRule(DragonOnslaught.INCREASED_VERTICAL_DRAGON_MOVEMENT) == EventResult.ALLOW) {
 			return 0.1;
@@ -85,11 +85,11 @@ public abstract class EnderDragonMixin extends Entity {
 	}
 
 	@WrapOperation(method = "checkWalls", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/level/ServerLevel;removeBlock(Lnet/minecraft/core/BlockPos;Z)Z"))
-	private boolean onDragonDestroyBlock(ServerLevel world, BlockPos pos, boolean moved, Operation<Boolean> operation) {
-		boolean result = operation.call(world, pos, moved);
+	private boolean onDragonDestroyBlock(ServerLevel level, BlockPos pos, boolean moved, Operation<Boolean> operation) {
+		boolean result = operation.call(level, pos, moved);
 
 		try (EventInvokers invokers = Stimuli.select().forEntity(this)) {
-			invokers.get(DragonDestroyBlockEvent.EVENT).onDragonDestroyBlock(world, pos);
+			invokers.get(DragonDestroyBlockEvent.EVENT).onDragonDestroyBlock(level, pos);
 		}
 
 		return result;
