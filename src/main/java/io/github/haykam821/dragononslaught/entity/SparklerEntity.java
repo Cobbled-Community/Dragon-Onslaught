@@ -7,6 +7,7 @@ import io.github.haykam821.dragononslaught.item.DragonOnslaughtItems;
 import net.fabricmc.fabric.api.networking.v1.context.PacketContext;
 import net.minecraft.SharedConstants;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.item.component.Fireworks;
 import net.minecraft.world.entity.EntityEvent;
 import net.minecraft.world.entity.EntityType;
@@ -54,7 +55,7 @@ public class SparklerEntity extends ItemEntity implements PolymerEntity {
 
 	@Override
 	public EntityType<?> getPolymerEntityType(PacketContext context) {
-		return EntityType.ITEM;
+		return EntityTypes.ITEM;
 	}
 
 	private static void spawnFireworks(ServerLevel level, Vec3 pos, Fireworks fireworks) {

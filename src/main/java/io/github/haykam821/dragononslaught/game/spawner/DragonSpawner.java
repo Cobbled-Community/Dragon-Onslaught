@@ -10,6 +10,7 @@ import io.github.haykam821.dragononslaught.game.player.PlayerEntry;
 import io.github.haykam821.dragononslaught.game.spawner.target.DragonTarget;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 import net.minecraft.world.entity.boss.enderdragon.phases.DragonChargePlayerPhase;
 import net.minecraft.world.entity.boss.enderdragon.phases.DragonHoldingPatternPhase;
@@ -51,7 +52,7 @@ public class DragonSpawner {
 				ServerLevel level = this.phase.getLevel();
 				Vec3 spawnPos = this.phase.getMap().getDragonSpawnPos(level);
 
-				EnderDragon dragon = new EnderDragon(EntityType.ENDER_DRAGON, level);
+				EnderDragon dragon = new EnderDragon(EntityTypes.ENDER_DRAGON, level);
 				dragon.setPos(spawnPos.x(), spawnPos.y(), spawnPos.z());
 
 				chargeTowards(dragon, targetPos);
